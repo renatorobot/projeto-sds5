@@ -1,6 +1,71 @@
+import axios from 'axios';
+import { useEffect, useState } from 'react';
 import Chart from 'react-apexcharts';
+import { SaleSuccess } from 'types/sale';
+import { round } from 'utils/format';
+import { BASE_URL } from 'utils/requests';
 
 function BarChart() {
+
+    type SeriesData ={
+        name: String;
+        data: number[];
+    }
+
+
+    type ChartData = {
+
+        lables: {
+            categories: string[]
+        };
+
+        series: SeriesData[]
+
+    }
+
+    const [chartData, setChartData] = useState<ChartData>({
+
+        lables: {
+            categories: []
+        },
+
+        series: [
+            {
+                name: "",
+                data: []                   
+            }
+        ]
+        
+    });
+
+    useEffect(()=> {
+
+        axios.get(`${BASE_URL}/sales/success-by-seller`)
+        .then(response => {
+            const data = response.data as SaleSuccess[];
+            const myLabels = data.map(x=>x.sellerName.toString());
+            const mySeries = data.map(x=>round(Number(100.00 * x.deals/x.visited), 1));
+
+            setChartData({ 
+
+                lables: {
+                    categories: myLabels
+                },
+        
+                series: [
+                    {
+                        name: "% de Sucesso",
+                        data: mySeries                   
+                    }
+                ]
+                
+            } )
+
+            //console.log(chartData);
+            
+        });
+
+    }, [])
 
     const options = {
         plotOptions: {
@@ -10,6 +75,8 @@ function BarChart() {
         },
     };
     
+    
+    /*
     const mockData = {
         labels: {
             categories: ['Anakin', 'Barry Allen', 'Kal-El', 'Logan', 'Padmé']
@@ -22,13 +89,13 @@ function BarChart() {
         ]
     };
 
-
+    */
 
     return (
 
        <Chart 
-            options={{...options, xaxis: mockData.labels}}
-            series={mockData.series}
+            options={{...options, xaxis: chartData.lables,}}
+            series={chartData.series}
             type="bar"
             height="240"
        />
